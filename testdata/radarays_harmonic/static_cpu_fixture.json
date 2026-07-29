@@ -1,0 +1,77 @@
+{
+  "world": "static_cpu",
+  "world_file": "gz_static_radar_cpu.sdf",
+  "topics": {
+    "scan": "radar/scan",
+    "points": "radar/points",
+    "image": "radar/image"
+  },
+  "capture_defaults": {
+    "duration_sec": 4.0,
+    "message_timeout_sec": 20.0
+  },
+  "reference_summary": {
+    "scan": {
+      "description": "The delegated Harmonic radar scenario should produce stable finite returns in the AVZ static map.",
+      "center_value_expected_range": [
+        1.1,
+        1.25
+      ],
+      "center_value_expected_stddev_max": 0.01
+    },
+    "points": {
+      "description": "Finite radar points should be present in front of the radar with a stable x midpoint.",
+      "bbox_midpoint_x_expected_range": [
+        4.3,
+        4.7
+      ],
+      "bbox_y_span_expected_min": 4.0
+    },
+    "image": {
+      "description": "Harmonic-native radar-physics polar image (radarays_embree_sensor_system): multi-bounce Fresnel reflection/refraction, cone-sampled beams, signal denoising, ambient noise. There should be a strong return in the center column near the range of the nearest AVZ geometry (rows 5-20, ~0.5-2.0m) -- not necessarily the single global peak, since a legitimate secondary bounce (multi-reflection recording is on by default) can reasonably reach a comparable or higher value elsewhere in the column.",
+      "width_expected": 400,
+      "height_expected": 1024,
+      "nonzero_count_expected_min": 1000,
+      "max_value_expected_min": 255,
+      "center_column_target_window_rows": [5, 20],
+      "center_column_target_window_min_value": 200
+    }
+  },
+  "expected": {
+    "scan": {
+      "min_messages": 3,
+      "min_rate_hz": 3.5,
+      "latest_finite_count_min": 300,
+      "center_window_finite_min": 5,
+      "center_value_range": {
+        "min": 1.1,
+        "max": 1.25
+      },
+      "center_value_stddev_max": 0.01
+    },
+    "points": {
+      "min_messages": 3,
+      "min_rate_hz": 3.5,
+      "latest_finite_points_min": 300,
+      "bbox_midpoint_x_range": {
+        "min": 4.3,
+        "max": 4.7
+      },
+      "bbox_y_span_min": 4.0
+    },
+    "image": {
+      "min_messages": 3,
+      "min_rate_hz": 3.5,
+      "width": 400,
+      "height": 1024,
+      "latest_nonzero_count_min": 1000,
+      "latest_max_value_min": 255,
+      "center_column_nonzero_count_min": 1,
+      "center_column_target_window": {
+        "row_min": 5,
+        "row_max": 20,
+        "min_value": 200
+      }
+    }
+  }
+}

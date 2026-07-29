@@ -1,0 +1,114 @@
+<?xml version="1.0" ?>
+<sdf version="1.9">
+  <world name="radarays_static_cpu">
+    <plugin
+      filename="gz-sim-physics-system"
+      name="gz::sim::systems::Physics" />
+    <plugin
+      filename="gz-sim-user-commands-system"
+      name="gz::sim::systems::UserCommands" />
+    <plugin
+      filename="gz-sim-scene-broadcaster-system"
+      name="gz::sim::systems::SceneBroadcaster" />
+
+    <plugin name="rmagine_embree_map_system" filename="librmagine_embree_map_system.so">
+      <ignore_model>sensor_model</ignore_model>
+      <update>
+        <rate_limit>20</rate_limit>
+        <delta_trans>0.001</delta_trans>
+        <delta_rot>0.001</delta_rot>
+        <delta_scale>0.001</delta_scale>
+      </update>
+    </plugin>
+
+    <light name="sun" type="directional">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 20 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.4 0.2 -0.9</direction>
+    </light>
+
+    <model name="avz_map">
+      <static>true</static>
+      <pose>0 0 0 0 0 0</pose>
+      <link name="avz_map_link">
+        <visual name="avz_map_visual">
+          <cast_shadows>false</cast_shadows>
+          <geometry>
+            <mesh>
+              <uri>avz_no_roof.stl</uri>
+              <scale>1 1 1</scale>
+            </mesh>
+          </geometry>
+          <radarays_material>
+            <velocity>0.0</velocity>
+            <ambient>0.3</ambient>
+            <diffuse>0.7</diffuse>
+            <specular>50.0</specular>
+          </radarays_material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="sensor_model">
+      <static>true</static>
+      <pose>0 0 0 0 0 0</pose>
+      <plugin name="rmagine_embree_sensor_system" filename="librmagine_embree_sensor_system.so">
+        <map_key>default</map_key>
+        <frame>radar</frame>
+        <topic_scan>radar/scan</topic_scan>
+        <topic_points>radar/points</topic_points>
+        <update_rate>4</update_rate>
+        <min_angle>-1.0472</min_angle>
+        <max_angle>1.0472</max_angle>
+        <samples>400</samples>
+        <range_min>0.2</range_min>
+        <range_max>100.0</range_max>
+      </plugin>
+      <plugin name="radarays_embree_sensor_system" filename="libradarays_embree_sensor_system.so">
+        <map_key>default</map_key>
+        <frame>radar</frame>
+        <topic_image>radar/image</topic_image>
+        <update_rate>4</update_rate>
+        <min_angle>-1.0472</min_angle>
+        <max_angle>1.0472</max_angle>
+        <samples>400</samples>
+        <range_max>100.0</range_max>
+        <n_cells>1024</n_cells>
+      </plugin>
+      <link name="base_link">
+        <visual name="base_visual">
+          <geometry>
+            <box>
+              <size>0.4 0.3 0.2</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.5 0.5 0.5 1</ambient>
+            <diffuse>0.5 0.5 0.5 1</diffuse>
+          </material>
+        </visual>
+      </link>
+      <link name="radar">
+        <pose>0 0 0.5 0 0 0</pose>
+        <visual name="radar_visual">
+          <geometry>
+            <cylinder>
+              <radius>0.0516</radius>
+              <length>0.0717</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>0.1 0.1 0.1 1</ambient>
+            <diffuse>0.1 0.1 0.1 1</diffuse>
+          </material>
+        </visual>
+      </link>
+      <joint name="radar_to_base_joint" type="fixed">
+        <parent>base_link</parent>
+        <child>radar</child>
+      </joint>
+    </model>
+  </world>
+</sdf>

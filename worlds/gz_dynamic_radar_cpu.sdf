@@ -1,0 +1,108 @@
+<?xml version="1.0" ?>
+<sdf version="1.9">
+  <world name="radarays_dynamic_cpu">
+    <plugin
+      filename="gz-sim-physics-system"
+      name="gz::sim::systems::Physics" />
+    <plugin
+      filename="gz-sim-user-commands-system"
+      name="gz::sim::systems::UserCommands" />
+    <plugin
+      filename="gz-sim-scene-broadcaster-system"
+      name="gz::sim::systems::SceneBroadcaster" />
+
+    <!-- Faster rate limit / tighter deltas than the static world: the map
+         needs to keep up with the moving box, matching
+         rmagine_gazebo_plugins/worlds/gz_embree_dynamic.sdf. -->
+    <plugin name="rmagine_embree_map_system" filename="librmagine_embree_map_system.so">
+      <ignore_model>sensor_model</ignore_model>
+      <update>
+        <rate_limit>30</rate_limit>
+        <delta_trans>0.001</delta_trans>
+        <delta_rot>0.001</delta_rot>
+        <delta_scale>0.001</delta_scale>
+      </update>
+    </plugin>
+
+    <light name="sun" type="directional">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.4 0.2 -0.9</direction>
+    </light>
+
+    <!-- Same oscillating box used to validate rmagine_gazebo_plugins's
+         dynamic path (test_box_mover_system): x-only motion keeps the
+         scenario easy to reason about while debugging. -->
+    <model name="target_box">
+      <static>false</static>
+      <pose>3 0 0.3 0 0 0</pose>
+      <plugin name="test_box_mover_system" filename="libtest_box_mover_system.so">
+        <axis>1 0 0</axis>
+        <amplitude>1.0</amplitude>
+        <period>6.0</period>
+      </plugin>
+      <link name="link">
+        <gravity>false</gravity>
+        <velocity_decay>
+          <linear>1.0</linear>
+          <angular>1.0</angular>
+        </velocity_decay>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>1 1 1</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.8 0.2 0.2 1</ambient>
+            <diffuse>0.8 0.2 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="sensor_model">
+      <static>true</static>
+      <pose>0 0 0.3 0 0 0</pose>
+      <plugin name="rmagine_embree_sensor_system" filename="librmagine_embree_sensor_system.so">
+        <map_key>default</map_key>
+        <frame>radar</frame>
+        <topic_scan>radar/scan</topic_scan>
+        <topic_points>radar/points</topic_points>
+        <update_rate>4</update_rate>
+        <min_angle>-1.0472</min_angle>
+        <max_angle>1.0472</max_angle>
+        <samples>400</samples>
+        <range_min>0.2</range_min>
+        <range_max>20.0</range_max>
+      </plugin>
+      <plugin name="radarays_embree_sensor_system" filename="libradarays_embree_sensor_system.so">
+        <map_key>default</map_key>
+        <frame>radar</frame>
+        <topic_image>radar/image</topic_image>
+        <update_rate>4</update_rate>
+        <min_angle>-1.0472</min_angle>
+        <max_angle>1.0472</max_angle>
+        <samples>400</samples>
+        <range_max>20.0</range_max>
+        <n_cells>1024</n_cells>
+      </plugin>
+      <link name="radar">
+        <visual name="radar_visual">
+          <geometry>
+            <cylinder>
+              <radius>0.0516</radius>
+              <length>0.0717</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>0.1 0.1 0.1 1</ambient>
+            <diffuse>0.1 0.1 0.1 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+  </world>
+</sdf>

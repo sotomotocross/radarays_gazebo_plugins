@@ -1,0 +1,68 @@
+{
+  "world": "dynamic_multi_cpu",
+  "world_file": "gz_dynamic_radar_cpu_multi.sdf",
+  "topics": {
+    "scan": "radar/scan",
+    "points": "radar/points",
+    "image": "radar/image"
+  },
+  "capture_defaults": {
+    "duration_sec": 10.0,
+    "message_timeout_sec": 20.0
+  },
+  "reference_summary": {
+    "scan": {
+      "description": "Two objects: target_box_translate (on boresight, oscillates x by +/-1m, rough/diffuse material) and target_box_rotate (off-boresight ~31deg, rotates in place +/-0.6rad yaw, specular material, zero translation). The center beam only sees the translating box, so its behavior matches dynamic_cpu's single-box scenario.",
+      "center_value_expected_range": [1.5, 3.5],
+      "center_value_expected_span": 2.0
+    },
+    "points": {
+      "description": "Combined point cloud bbox spans both objects. x midpoint moves less than in dynamic_cpu (diluted by the off-center, non-translating second object) but y midpoint now moves too -- that's specifically the rotating box's footprint changing, a signal the single-box scenario has no way to produce.",
+      "bbox_midpoint_x_span_observed": 0.63,
+      "bbox_midpoint_y_span_observed": 0.27
+    },
+    "image": {
+      "description": "Center column still tracks only the translating box (peak row span matches dynamic_cpu almost exactly). The whole-image nonzero pixel count now swings much more (span ~70k vs ~0 in the static scenario) because the rotating box's specular material sweeps through and away from normal incidence as it yaws -- back_reflection_shader depends on incidence angle, so this is a real physics signal, not just a geometry-visibility one.",
+      "nonzero_count_span_observed": 70656,
+      "center_column_peak_row_span_observed": 103
+    }
+  },
+  "expected": {
+    "scan": {
+      "min_messages": 10,
+      "min_rate_hz": 3.5,
+      "latest_finite_count_min": 30,
+      "center_window_finite_min": 5,
+      "center_value_range": {
+        "min": 1.3,
+        "max": 3.7
+      },
+      "center_value_stddev_max": 5.0,
+      "center_value_span_min": 1.5,
+      "center_value_stddev_min": 0.4
+    },
+    "points": {
+      "min_messages": 10,
+      "min_rate_hz": 3.5,
+      "latest_finite_points_min": 30,
+      "bbox_midpoint_x_range": {
+        "min": 1.0,
+        "max": 4.0
+      },
+      "bbox_y_span_min": 1.5,
+      "bbox_midpoint_x_span_min": 0.4,
+      "bbox_midpoint_y_span_min": 0.15
+    },
+    "image": {
+      "min_messages": 10,
+      "min_rate_hz": 3.5,
+      "width": 400,
+      "height": 1024,
+      "latest_nonzero_count_min": 5000,
+      "latest_max_value_min": 200,
+      "center_column_nonzero_count_min": 1,
+      "center_column_peak_row_span_min": 60,
+      "nonzero_count_span_min": 30000
+    }
+  }
+}

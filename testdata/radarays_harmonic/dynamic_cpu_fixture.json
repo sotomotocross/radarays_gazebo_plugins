@@ -1,0 +1,65 @@
+{
+  "world": "dynamic_cpu",
+  "world_file": "gz_dynamic_radar_cpu.sdf",
+  "topics": {
+    "scan": "radar/scan",
+    "points": "radar/points",
+    "image": "radar/image"
+  },
+  "capture_defaults": {
+    "duration_sec": 10.0,
+    "message_timeout_sec": 20.0
+  },
+  "reference_summary": {
+    "scan": {
+      "description": "A 1m box oscillates +/-1m along x (period 6s) directly ahead of the radar. The center-beam distance should track it: ~1.5m to ~3.5m, not a static value.",
+      "center_value_expected_range": [1.5, 3.5],
+      "center_value_expected_span": 2.0
+    },
+    "points": {
+      "description": "Point cloud x midpoint should track the same 1.5-3.5m oscillation; the y extent stays roughly the box width (~1m) regardless of range.",
+      "bbox_midpoint_x_expected_range": [1.5, 3.5]
+    },
+    "image": {
+      "description": "Unlike the static_cpu scenario (office mesh fills most of the FOV, ~100% nonzero via ambient noise), this scene is just one box in open space: most beam angles get no reflection at all, and this port's ambient-noise model scales with the column's own peak signal, so an angle with zero signal renders as pure black rather than a noise floor -- nonzero_ratio ~18% here is expected, not a bug. The center-column return should still track the box's range like the scan does.",
+      "nonzero_ratio_observed": 0.1825,
+      "center_column_peak_row_expected_span": 103
+    }
+  },
+  "expected": {
+    "scan": {
+      "min_messages": 10,
+      "min_rate_hz": 3.5,
+      "latest_finite_count_min": 30,
+      "center_window_finite_min": 5,
+      "center_value_range": {
+        "min": 1.3,
+        "max": 3.7
+      },
+      "center_value_stddev_max": 5.0,
+      "center_value_span_min": 1.5,
+      "center_value_stddev_min": 0.4
+    },
+    "points": {
+      "min_messages": 10,
+      "min_rate_hz": 3.5,
+      "latest_finite_points_min": 30,
+      "bbox_midpoint_x_range": {
+        "min": 1.3,
+        "max": 3.7
+      },
+      "bbox_y_span_min": 0.5,
+      "bbox_midpoint_x_span_min": 1.5
+    },
+    "image": {
+      "min_messages": 10,
+      "min_rate_hz": 3.5,
+      "width": 400,
+      "height": 1024,
+      "latest_nonzero_count_min": 5000,
+      "latest_max_value_min": 200,
+      "center_column_nonzero_count_min": 1,
+      "center_column_peak_row_span_min": 60
+    }
+  }
+}
