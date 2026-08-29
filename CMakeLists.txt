@@ -128,6 +128,14 @@ if(RADARAYS_GZSIM_PORT)
     install(TARGETS radarays_optix_sensor_system
       LIBRARY DESTINATION lib/${PROJECT_NAME}
     )
+
+    # Test registration below must be gated on this exact flag, not just
+    # `TARGET rmagine::optix` -- an environment with OptiX but no CUDA
+    # compiler or radarays_gpu_core would otherwise register a GPU
+    # fixture test that references a .so that was never built, a
+    # confusing test-registration failure rather than a real regression
+    # (flagged in self-review).
+    set(RADARAYS_OPTIX_SENSOR_SYSTEM_BUILT TRUE)
   elseif(TARGET rmagine::optix)
     message(WARNING "rmagine::optix found but radarays_ros::radarays_gpu or a CUDA compiler is missing -- radarays_optix_sensor_system will not be built.")
   endif()
@@ -221,7 +229,7 @@ if(BUILD_TESTING AND RADARAYS_GZSIM_PORT)
   # sensor's own motion is actually reflected in the output, not just
   # "some nonzero data" -- see README.md for the real numbers this was
   # verified against.
-  if(TARGET rmagine::optix)
+  if(RADARAYS_OPTIX_SENSOR_SYSTEM_BUILT)
     ament_add_test(radarays_fixture_egomotion_gpu
       COMMAND bash -c "ros2 run radarays_gazebo_plugins capture_radarays_fixture egomotion_gpu && ros2 run radarays_gazebo_plugins compare_radarays_fixture egomotion_gpu"
       APPEND_LIBRARY_DIRS "/usr/local/lib"

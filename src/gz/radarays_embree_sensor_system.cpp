@@ -372,7 +372,11 @@ void RadaraysEmbreeSensorSystem::DeclareReconfigurableParams()
     node_->declare_parameter(name, value, descriptor);
   };
 
-  node_->declare_parameter("update_rate", update_rate_);
+  // update_rate feeds 1.0 / update_rate_ (PostUpdate) -- 0 or negative is
+  // a division-by-zero / nonsensical publish timing, not just an unusual
+  // tuning choice. Bounded away from 0 rather than just >= 0 for the same
+  // reason (flagged in self-review).
+  declare_ranged_double("update_rate", update_rate_, 0.001, 1000.0);
   node_->declare_parameter("debug", debug_);
 
   declare_ranged_int("n_reflections", static_cast<int>(n_reflections_), 1, 20);
@@ -443,6 +447,11 @@ rcl_interfaces::msg::SetParametersResult RadaraysEmbreeSensorSystem::OnSetParame
       result.successful = false;
       result.reason = "range_max must be > 0";
     }
+    else if(name == "update_rate" && param.as_double() <= 0.0)
+    {
+      result.successful = false;
+      result.reason = "update_rate must be > 0";
+    }
   }
   if(!result.successful)
   {
@@ -499,7 +508,19 @@ void RadaraysEmbreeSensorSystem::LoadParams(const std::shared_ptr<const sdf::Ele
   if(_sdf->HasElement("frame")) { frame_id_ = _sdf->Get<std::string>("frame"); }
   if(_sdf->HasElement("parent_frame")) { parent_frame_id_ = _sdf->Get<std::string>("parent_frame"); }
   if(_sdf->HasElement("topic_image")) { topic_image_ = _sdf->Get<std::string>("topic_image"); }
-  if(_sdf->HasElement("update_rate")) { update_rate_ = _sdf->Get<double>("update_rate"); }
+  if(_sdf->HasElement("update_rate"))
+  {
+    const double requested = _sdf->Get<double>("update_rate");
+    if(requested > 0.0)
+    {
+      update_rate_ = requested;
+    }
+    else
+    {
+      std::cerr << "[RadaraysEmbreeSensorSystem] SDF update_rate " << requested
+                << " must be > 0, keeping default " << update_rate_ << "." << std::endl;
+    }
+  }
   if(_sdf->HasElement("debug")) { debug_ = _sdf->Get<bool>("debug"); }
 
   if(_sdf->HasElement("samples")) { n_angles_ = _sdf->Get<unsigned int>("samples"); }

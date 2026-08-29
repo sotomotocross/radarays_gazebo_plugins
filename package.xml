@@ -5,7 +5,7 @@
   <description>ROS 2 / Gazebo Harmonic migration package for radarays_gazebo_plugins.</description>
 
   <maintainer email="amock@uos.de">Alexander Mock</maintainer>
-  <license>TODO</license>
+  <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
@@ -19,6 +19,19 @@
   <depend>radarays_ros</depend>
   <depend>rmagine</depend>
   <depend>sensor_msgs</depend>
+  <!-- sensor_msgs_py: scripts/radarays_fixture_harness.py imports
+       sensor_msgs_py.point_cloud2; was working transitively (already
+       installed for another reason on this dev machine) but not declared,
+       flagged in self-review. A fresh/minimal environment shouldn't have
+       to rely on that. -->
+  <depend>sensor_msgs_py</depend>
+  <!-- ros_gz_bridge: rmagine_gazebo_plugins's sensor systems publish
+       radar/scan+radar/points over native gz-transport only (post
+       amock-rewrite), not rclcpp directly. The fixture harness and all
+       3 interactive launch files run a ros_gz_bridge parameter_bridge to
+       get them into ROS 2. radar/image needs no bridge (this package's
+       own plugin, still an embedded rclcpp publisher). -->
+  <depend>ros_gz_bridge</depend>
   <depend>gz-sim8</depend>
   <depend>gz-plugin2</depend>
   <depend>gz-transport13</depend>
