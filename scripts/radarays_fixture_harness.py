@@ -407,9 +407,33 @@ def stop_world(process: subprocess.Popen) -> None:
         process.wait(timeout=5.0)
 
 
+def launch_bridge(log_path: Path) -> subprocess.Popen:
+    # rmagine_gazebo_plugins's new (post-amock-rewrite) sensor systems
+    # publish scan/points over native gz-transport only, not rclcpp
+    # directly -- a separate ros_gz_bridge is required to get them into
+    # ROS 2. Only radar/scan + radar/points need bridging: radar/image is
+    # radarays_gazebo_plugins's own plugin, which still publishes via an
+    # embedded rclcpp node directly, unaffected by any of this.
+    bridge_log = log_path.parent / f"{log_path.stem}_bridge.log"
+    log_file = bridge_log.open("w", encoding="utf-8")
+    return subprocess.Popen(
+        [
+            "ros2", "run", "ros_gz_bridge", "parameter_bridge",
+            f"{TOPICS['scan']}@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan",
+            f"{TOPICS['points']}@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked",
+        ],
+        stdout=log_file, stderr=subprocess.STDOUT, preexec_fn=os.setsid,
+    )
+
+
+def stop_bridge(process: subprocess.Popen) -> None:
+    stop_world(process)  # identical shutdown shape, kept as a separate name for clarity at call sites
+
+
 def capture_world(world: str, output_path: Path, duration_sec: float, timeout_sec: float) -> int:
     log_path = default_log_path(world)
     process = launch_world(world, log_path)
+    bridge_process = launch_bridge(log_path)
     ensure_ros_log_dir()
     rclpy.init(args=None)
     collector = TopicCollector()
@@ -449,6 +473,7 @@ def capture_world(world: str, output_path: Path, duration_sec: float, timeout_se
         finally:
             rclpy.shutdown()
             stop_world(process)
+            stop_bridge(bridge_process)
 
 
 def load_json(path: Path) -> Dict[str, object]:

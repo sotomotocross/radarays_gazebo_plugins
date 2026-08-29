@@ -29,6 +29,13 @@
       </update>
     </plugin>
 
+    <!-- One factory plugin per world discovers every
+         `<sensor type="custom" gz:type="rmagine_embree">` anywhere in this
+         world -- the individual sensor's own params (map_key/frame/
+         topic_scan/topic_points/update_rate/lidar) now live on that
+         <sensor> element itself, not here. -->
+    <plugin name="rmagine_embree_sensor_system" filename="librmagine_embree_sensor_system.so"/>
+
     <light name="sun" type="directional">
       <cast_shadows>true</cast_shadows>
       <pose>0 0 20 0 0 0</pose>
@@ -69,19 +76,6 @@
         <angular_axis>0 0 1</angular_axis>
         <angular_amplitude>0.3</angular_amplitude>
       </plugin>
-      <plugin name="rmagine_embree_sensor_system" filename="librmagine_embree_sensor_system.so">
-        <map_key>default</map_key>
-        <frame>radar</frame>
-        <topic_scan>radar/scan</topic_scan>
-        <topic_points>radar/points</topic_points>
-        <update_rate>10</update_rate>
-        <min_angle>-1.0472</min_angle>
-        <max_angle>1.0472</max_angle>
-        <samples>400</samples>
-        <range_min>0.2</range_min>
-        <range_max>100.0</range_max>
-        <debug>true</debug>
-      </plugin>
       <plugin name="radarays_embree_sensor_system" filename="libradarays_embree_sensor_system.so">
         <map_key>default</map_key>
         <frame>radar</frame>
@@ -118,6 +112,27 @@
           <linear>1.0</linear>
           <angular>1.0</angular>
         </velocity_decay>
+        <sensor name="radar_lidar_sensor" type="custom" gz:type="rmagine_embree">
+          <map_key>default</map_key>
+          <frame>radar</frame>
+          <topic_scan>radar/scan</topic_scan>
+          <topic_points>radar/points</topic_points>
+          <update_rate>10</update_rate>
+          <debug>true</debug>
+          <lidar>
+            <scan>
+              <horizontal>
+                <min_angle>-1.0472</min_angle>
+                <increment>0.0052486216</increment>
+                <samples>400</samples>
+              </horizontal>
+            </scan>
+            <range>
+              <min>0.2</min>
+              <max>100.0</max>
+            </range>
+          </lidar>
+        </sensor>
         <visual name="radar_visual">
           <geometry>
             <cylinder>

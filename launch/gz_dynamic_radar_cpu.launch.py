@@ -1,6 +1,7 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, SetEnvironmentVariable
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, EnvironmentVariable
+from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -51,6 +52,22 @@ def generate_launch_description():
                     # you don't notice the GUI's pause button.
                     "-r",
                     LaunchConfiguration("world"),
+                ],
+                output="screen",
+            ),
+            # rmagine_gazebo_plugins's rmagine_embree_sensor_system (the
+            # generic /radar/scan+/radar/points path -- NOT
+            # radarays_embree_sensor_system, which still publishes
+            # /radar/image directly via an embedded rclcpp node) publishes
+            # over native gz-transport only since amock's rewrite, not
+            # rclcpp directly -- this bridge is what actually gets those
+            # two topics into ROS 2.
+            Node(
+                package="ros_gz_bridge",
+                executable="parameter_bridge",
+                arguments=[
+                    "radar/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan",
+                    "radar/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked",
                 ],
                 output="screen",
             ),
