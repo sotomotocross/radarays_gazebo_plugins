@@ -74,6 +74,7 @@ void RadaraysEmbreeSensorSystem::RefreshSimulator()
   if(!map)
   {
     map_.reset();
+    map_mutex_.reset();
     sim_.reset();
     map_revision_ = 0;
     std::cerr << "[RadaraysEmbreeSensorSystem] No map available for key '" << map_key_ << "'." << std::endl;
@@ -83,6 +84,7 @@ void RadaraysEmbreeSensorSystem::RefreshSimulator()
   if(!sim_ || !map_ || map != map_ || revision != map_revision_)
   {
     map_ = map;
+    map_mutex_ = registry.GetMapMutex(map_key_);
     sim_ = std::make_shared<rmagine::OnDnSimulatorEmbree>(map_);
     sim_->setTsb(rmagine::Transform::Identity());
     map_revision_ = revision;
@@ -615,7 +617,16 @@ void RadaraysEmbreeSensorSystem::SimulateFrame(
     results.normals.resize(model.size());
     results.object_ids.resize(model.size());
 
-    sim_->simulate(Tsm, results);
+    {
+      // See map_mutex_'s declaration (header) -- must not race the map
+      // system's in-place scene mutation.
+      std::shared_lock<std::shared_mutex> lock;
+      if(map_mutex_)
+      {
+        lock = std::shared_lock<std::shared_mutex>(*map_mutex_);
+      }
+      sim_->simulate(Tsm, results);
+    }
 
     std::vector<DirectedWave> waves_new;
     std::vector<uint32_t> wave_angle_new;

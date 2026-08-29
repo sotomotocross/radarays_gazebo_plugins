@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <random>
+#include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -155,6 +156,11 @@ private:
 
   rmagine::OptixMapPtr map_;
   rmagine::OnDnSimulatorOptixPtr sim_;
+  // See the identical member on RadaraysEmbreeSensorSystem (Embree header)
+  // -- same rationale, GPU side: rmagine_gazebo_plugins's map system
+  // mutates its persistent scene in place now, so a shared_lock around
+  // every simulate() call is required.
+  std::shared_ptr<std::shared_mutex> map_mutex_;
   uint64_t map_revision_{0};
   gz::math::Pose3d local_sensor_pose_{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   bool frame_resolved_logged_{false};

@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <random>
+#include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -187,6 +188,14 @@ private:
 
   rmagine::EmbreeMapPtr map_;
   rmagine::OnDnSimulatorEmbreePtr sim_;
+  // rmagine_gazebo_plugins's map system now mutates its persistent
+  // EmbreeScene in place (add/remove/move geometry, then commit()) across
+  // several steps of its own PostUpdate, instead of one atomic pointer
+  // swap -- fetched from MapRegistry alongside map_ (same key), a
+  // shared_lock around every simulate() call (paired with the map
+  // system's own unique_lock around its whole sync block) is required so
+  // a raycast never runs concurrently with a scene mutation.
+  std::shared_ptr<std::shared_mutex> map_mutex_;
   uint64_t map_revision_{0};
   gz::math::Pose3d local_sensor_pose_{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   bool frame_resolved_logged_{false};

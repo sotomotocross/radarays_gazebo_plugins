@@ -56,6 +56,7 @@ void RadaraysOptixSensorSystem::RefreshSimulator()
   if(!map)
   {
     map_.reset();
+    map_mutex_.reset();
     sim_.reset();
     map_revision_ = 0;
     std::cerr << "[RadaraysOptixSensorSystem] No map available for key '" << map_key_ << "'." << std::endl;
@@ -65,6 +66,7 @@ void RadaraysOptixSensorSystem::RefreshSimulator()
   if(!sim_ || !map_ || map != map_ || revision != map_revision_)
   {
     map_ = map;
+    map_mutex_ = registry.GetMapMutex(map_key_);
     sim_ = std::make_shared<rmagine::OnDnSimulatorOptix>(map_);
     sim_->setTsb(rmagine::Transform::Identity());
     // Proactively activate the map's CUDA context here rather than letting
@@ -653,7 +655,16 @@ void RadaraysOptixSensorSystem::SimulateFrame(
   {
     ResT results;
     rm::resize_memory_bundle<rm::VRAM_CUDA>(results, waves_gpu.width, waves_gpu.height, 1);
-    sim_->simulate(Tsms, results);
+    {
+      // See map_mutex_'s declaration (header) -- must not race the map
+      // system's in-place scene mutation.
+      std::shared_lock<std::shared_mutex> lock;
+      if(map_mutex_)
+      {
+        lock = std::shared_lock<std::shared_mutex>(*map_mutex_);
+      }
+      sim_->simulate(Tsms, results);
+    }
 
     move_waves(waves_gpu.origs, waves_gpu.dirs, attrs_gpu, results.ranges, results.hits);
 
