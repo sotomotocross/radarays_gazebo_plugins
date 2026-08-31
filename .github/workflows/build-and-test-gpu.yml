@@ -16,9 +16,9 @@
 name: build-and-test-gpu
 on:
   push:
-    branches: [main, ros2-jazzy-harmonic]
+    branches: [main]
   pull_request:
-    branches: [main, ros2-jazzy-harmonic]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -34,20 +34,20 @@ jobs:
 
       - name: Checkout sibling packages
         run: |
-          # Clones sibling packages from this workspace's own forks
-          # (sotomotocross/*) at ros2-jazzy-harmonic. This is the real,
-          # permanent development line now, not a staging step for an
-          # upstream PR -- see MIGRATION_HANDOFF.md for why (amock's own
-          # rewrite superseded rmagine_gazebo_plugins upstream; we're
-          # continuing independently on our forks rather than chasing
-          # that merge).
+          # Clones sibling packages from this workspace's own standalone
+          # repos (sotomotocross/*, main branch) -- no longer forks: see
+          # MIGRATION_HANDOFF.md's "Independent continuation" section for
+          # why (amock's own rewrite superseded rmagine_gazebo_plugins
+          # upstream; we're continuing independently rather than chasing
+          # that merge, and moved off forks entirely so this work counts
+          # as real GitHub contributions rather than invisible fork commits).
           set -euxo pipefail
           rm -rf ws/src/rmagine
-          git clone --depth 1 --branch ros2-jazzy-harmonic https://github.com/sotomotocross/rmagine.git ws/src/rmagine
+          git clone --depth 1 --branch main https://github.com/sotomotocross/rmagine.git ws/src/rmagine
           rm -rf ws/src/rmagine_gazebo_plugins
-          git clone --depth 1 --branch ros2-jazzy-harmonic https://github.com/sotomotocross/rmagine_gazebo_plugins.git ws/src/rmagine_gazebo_plugins
+          git clone --depth 1 --branch main https://github.com/sotomotocross/rmagine_gazebo_plugins.git ws/src/rmagine_gazebo_plugins
           rm -rf ws/src/radarays_ros
-          git clone --depth 1 --branch ros2-jazzy-harmonic https://github.com/sotomotocross/radarays_ros.git ws/src/radarays_ros
+          git clone --depth 1 --branch main https://github.com/sotomotocross/radarays_ros.git ws/src/radarays_ros
 
       - name: Install ROS 2 Jazzy
         uses: ros-tooling/setup-ros@v0.7

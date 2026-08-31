@@ -5,7 +5,15 @@
   <description>ROS 2 / Gazebo Harmonic migration package for radarays_gazebo_plugins.</description>
 
   <maintainer email="amock@uos.de">Alexander Mock</maintainer>
+  <!-- Independent ROS 2 Jazzy / Gazebo Harmonic continuation, not affiliated
+       with the original maintainer above. See README.md's "Origin" section. -->
+  <maintainer email="s.aspragkathos@gmail.com">Sotiris Aspragkathos</maintainer>
   <license>BSD-3-Clause</license>
+
+  <url type="repository">https://github.com/sotomotocross/radarays_gazebo_plugins</url>
+
+  <author email="amock@uos.de">Alexander Mock</author>
+  <author email="s.aspragkathos@gmail.com">Sotiris Aspragkathos</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

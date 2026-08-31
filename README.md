@@ -1,6 +1,18 @@
 # radarays_gazebo_plugins
 
-[radarays_ros](https://github.com/uos/radarays_ros) Gazebo plugin.
+[radarays_ros](https://github.com/sotomotocross/radarays_ros) Gazebo plugin.
+
+## Origin
+
+This is an independent ROS 2 Jazzy / Gazebo Harmonic continuation of
+[uos/radarays_gazebo_plugins](https://github.com/uos/radarays_gazebo_plugins),
+originally authored by the Osnabrück University Knowledge Based Systems
+Group (Alexander Mock). The ROS 2 Jazzy / Gazebo Harmonic port and
+subsequent fixes here are by
+[Sotiris Aspragkathos](https://github.com/sotomotocross), not affiliated
+with the original authors. See [MIGRATION_HANDOFF.md](https://github.com/sotomotocross/radarays_ros/blob/main/MIGRATION_HANDOFF.md)
+(in the `radarays_ros` repo) for the full story of why this continues here
+independently rather than as an open pull request.
 
 ## Migration Status
 
