@@ -95,6 +95,25 @@ ros2 interface show radarays_ros/action/GenRadarImage > /dev/null
 # OptiX SDK regression above even on a machine where it mattered. Fixed by
 # just running the real `colcon test`/`colcon test-result` instead of
 # partially reimplementing it.
+# Real, evidence-based fix, not preventative guesswork: repeated CI (and
+# local) runs of rmagine_gazebo_plugins' fixture suite showed a random
+# subset of fixtures failing with "Timed out waiting for /scan and
+# /points" -- root-caused to two compounding causes, not a resource
+# ceiling (VRAM was measured live during an actual failure: peak
+# 617/4094 MiB) or desktop-app CPU contention (independently ruled out
+# too): (1) the fixture harness's own internal wait timeout was too tight
+# for this hardware's real gz sim + Ogre2 cold-start variance (since
+# fixed at the source, see embree_fixture_harness.py's --timeout and
+# check_mesh_cache_fixture.py's deadline); (2) stale FastRTPS
+# shared-memory segments accumulating in /dev/shm across repeated
+# back-to-back test invocations on the same machine measurably worsened
+# it further -- clearing 60 orphaned segments cut one local run's
+# failures from 6 to 2. Safe to always run: only touches segments no
+# live process holds (colcon test hasn't started anything yet at this
+# point), and DDS recreates whatever it actually needs.
+echo "=== clearing stale FastRTPS shared-memory segments ==="
+rm -f /dev/shm/fastrtps_* 2>/dev/null || true
+
 echo "=== colcon test ==="
 colcon test \
   --packages-select rmagine rmagine_gazebo_plugins radarays_gazebo_plugins radarays_ros
