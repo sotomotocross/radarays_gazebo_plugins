@@ -81,6 +81,15 @@ source "${WS_ROOT}/install/setup.bash"
 set -u
 export LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH:-}"
 
+# See ci_build_and_test.sh's matching comment for the full root-cause
+# writeup (stale FastRTPS shared-memory segments accumulating across
+# repeated test invocations measurably worsened fixture flakiness).
+# This is the actual script the GPU workflow runs -- ci_build_and_test.sh
+# (CPU) never touches this job at all, confirmed the hard way after a
+# fix there had zero effect here.
+echo "=== clearing stale FastRTPS shared-memory segments ==="
+rm -f /dev/shm/fastrtps_* 2>/dev/null || true
+
 echo "=== colcon test ==="
 colcon test \
   --packages-select rmagine rmagine_gazebo_plugins radarays_gazebo_plugins radarays_ros
