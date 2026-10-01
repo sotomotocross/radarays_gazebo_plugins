@@ -114,6 +114,26 @@ private:
 
   double energy_max_{0.5};
   double signal_max_{255.0};
+  // Absolute image gain. The polar image used to be normalised per bearing
+  // (every bearing's own peak rescaled to signal_max_), which pinned every
+  // returning bearing to the ceiling and discarded absolute amplitude
+  // entirely -- so water and a steel hull produced the same pixel value and
+  // no intensity threshold could tell them apart. signal_reference_ is the
+  // post-energy_max signal level that maps to signal_max_, giving a fixed
+  // gain instead.
+  //
+  // Calibrated on ocean_world with a 227 m hull at 300 m, splitting each
+  // bearing's peak by whether it fell inside or beyond 200 m:
+  //     sea surface  0.003 .. 0.068
+  //     hull         0.500 .. 3.250
+  // A reference of 1.0 puts the sea at 1-17 and the hull at 128-255 (the
+  // strongest returns clip, which is what a real radar does too), leaving
+  // radar_image_to_scan's default threshold of 40 comfortably between the
+  // two populations rather than inside either.
+  double signal_reference_{1.0};
+  // Restores the old per-bearing normalisation. Kept because the upstream
+  // MulRan/ORU configurations were tuned against it.
+  bool normalize_per_beam_{false};
 
   int signal_denoising_{1};
   int signal_denoising_width_{23};

@@ -389,6 +389,8 @@ void RadaraysEmbreeSensorSystem::DeclareReconfigurableParams()
 
   node_->declare_parameter("energy_max", energy_max_);
   node_->declare_parameter("signal_max", signal_max_);
+  node_->declare_parameter("signal_reference", signal_reference_);
+  node_->declare_parameter("normalize_per_beam", normalize_per_beam_);
 
   declare_ranged_int("signal_denoising", signal_denoising_, 0, 3);
   declare_ranged_int("signal_denoising_width", signal_denoising_width_, 1, 500);
@@ -472,6 +474,8 @@ rcl_interfaces::msg::SetParametersResult RadaraysEmbreeSensorSystem::OnSetParame
     else if(name == "beam_sample_dist_p_in_cone") { beam_sample_dist_p_in_cone_ = param.as_double(); beam_dirty = true; }
     else if(name == "energy_max") { energy_max_ = param.as_double(); }
     else if(name == "signal_max") { signal_max_ = param.as_double(); }
+    else if(name == "signal_reference") { signal_reference_ = param.as_double(); }
+    else if(name == "normalize_per_beam") { normalize_per_beam_ = param.as_bool(); }
     else if(name == "signal_denoising") { signal_denoising_ = static_cast<int>(param.as_int()); }
     else if(name == "signal_denoising_width") { signal_denoising_width_ = static_cast<int>(param.as_int()); }
     else if(name == "signal_denoising_mode_frac") { signal_denoising_mode_frac_ = param.as_double(); }
@@ -540,6 +544,8 @@ void RadaraysEmbreeSensorSystem::LoadParams(const std::shared_ptr<const sdf::Ele
 
   if(_sdf->HasElement("energy_max")) { energy_max_ = _sdf->Get<double>("energy_max"); }
   if(_sdf->HasElement("signal_max")) { signal_max_ = _sdf->Get<double>("signal_max"); }
+  if(_sdf->HasElement("signal_reference")) { signal_reference_ = _sdf->Get<double>("signal_reference"); }
+  if(_sdf->HasElement("normalize_per_beam")) { normalize_per_beam_ = _sdf->Get<bool>("normalize_per_beam"); }
 
   if(_sdf->HasElement("signal_denoising")) { signal_denoising_ = _sdf->Get<int>("signal_denoising"); }
   if(_sdf->HasElement("signal_denoising_width")) { signal_denoising_width_ = _sdf->Get<int>("signal_denoising_width"); }
@@ -835,9 +841,29 @@ void RadaraysEmbreeSensorSystem::SimulateFrame(
       }
     }
 
-    if(max_val > 0.0f)
+    // Image gain. Per-bearing normalisation (normalize_per_beam_) rescales
+    // each bearing's own peak to signal_max_, which means every bearing that
+    // returned anything saturates and material amplitude never reaches the
+    // image -- measured: of 670 returning bearings, 551 at 255 and 119 at
+    // 254, two values and nothing between. A fixed gain keeps amplitude, so
+    // a weak sea return and a hull land at different pixel values and
+    // radar_image_to_scan's threshold has something to cut against.
+    //
+    // Note energy_max_ was previously a no-op: it multiplied the slice and
+    // max_val alike, so the normalisation divided it straight back out. It
+    // is a real gain term again under the fixed-gain path.
+    if(normalize_per_beam_)
     {
-      const float scale = static_cast<float>(signal_max_) / max_val;
+      if(max_val > 0.0f)
+      {
+        const float scale = static_cast<float>(signal_max_) / max_val;
+        for(float &v : slice) { v *= scale; }
+      }
+    }
+    else
+    {
+      const double reference = (signal_reference_ > 0.0) ? signal_reference_ : 1.0;
+      const float scale = static_cast<float>(signal_max_ / reference);
       for(float &v : slice) { v *= scale; }
     }
 
