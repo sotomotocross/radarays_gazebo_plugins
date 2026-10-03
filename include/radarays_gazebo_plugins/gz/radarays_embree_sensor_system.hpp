@@ -5,6 +5,7 @@
 #include <random>
 #include <shared_mutex>
 #include <string>
+#include <utility>
 #include <unordered_map>
 #include <vector>
 
@@ -103,6 +104,17 @@ private:
   // Re-reads per-visual radar materials. Only needs to run when the map
   // geometry actually changed (map_revision_ bumped), not every publish.
   void RefreshMaterials(const gz::sim::EntityComponentManager &_ecm);
+
+  // Model-name patterns that borrow another model's <radarays_material>.
+  // Needed because RefreshMaterials resolves materials out of the STATIC
+  // world SDF, so a model spawned at runtime -- crete_chunk_spawner's
+  // "water_area-<x>-<y>" tiles, say -- is not in it, misses the lookup and
+  // silently falls back to the shared wall-stone default. For water that
+  // means a 25x over-reflective sea sitting in the same plane as the
+  // calibrated one. A position-derived name can never be enumerated ahead
+  // of time in a static list, which is exactly why rmagine_gazebo_plugins
+  // grew the same trailing-'*' convention for ignore_model.
+  std::vector<std::pair<std::string, std::string>> material_aliases_;
 
   sdf::ElementPtr FindRadaraysMaterialElement(
     const std::string &model_name,

@@ -184,6 +184,25 @@ bool RadaraysEmbreeSensorSystem::EnsureWorldSdf(const gz::sim::EntityComponentMa
   return world_sdf_ != nullptr;
 }
 
+namespace
+{
+// Exact match, or a trailing '*' prefix match ("water_area-*" matches
+// "water_area-4000.00-0.00"). Same convention and spelling as
+// rmagine_gazebo_plugins' MatchesIgnorePattern, deliberately: a world that
+// spawns chunks under position-derived names cannot enumerate them in a
+// static list, and the two plugins should not disagree about what a
+// pattern means.
+bool MatchesModelPattern(const std::string &name, const std::string &pattern)
+{
+  if(!pattern.empty() && pattern.back() == '*')
+  {
+    const std::string prefix = pattern.substr(0, pattern.size() - 1);
+    return name.compare(0, prefix.size(), prefix) == 0;
+  }
+  return name == pattern;
+}
+}  // namespace
+
 sdf::ElementPtr RadaraysEmbreeSensorSystem::FindRadaraysMaterialElement(
   const std::string &model_name,
   const std::string &link_name,
@@ -224,6 +243,27 @@ sdf::ElementPtr RadaraysEmbreeSensorSystem::FindRadaraysMaterialElement(
         }
         return nullptr;
       }
+    }
+  }
+
+  // No exact match. If this model's name matches an alias pattern, borrow
+  // the material declared on the alias's source model. The link and visual
+  // names carry over unchanged, which is what makes this work for spawned
+  // copies: a tile spawned from model://Water has the same link/visual
+  // structure as the GlobalWater instance declared in the world.
+  //
+  // Guarded against self-recursion -- an alias whose source is itself would
+  // otherwise re-enter with the same name forever.
+  for(const auto &[pattern, source_model] : material_aliases_)
+  {
+    if(source_model == model_name || !MatchesModelPattern(model_name, pattern))
+    {
+      continue;
+    }
+    if(sdf::ElementPtr aliased =
+         FindRadaraysMaterialElement(source_model, link_name, visual_name))
+    {
+      return aliased;
     }
   }
   return nullptr;
@@ -552,6 +592,20 @@ void RadaraysEmbreeSensorSystem::LoadParams(const std::shared_ptr<const sdf::Ele
   if(_sdf->HasElement("signal_max")) { signal_max_ = _sdf->Get<double>("signal_max"); }
   if(_sdf->HasElement("signal_reference")) { signal_reference_ = _sdf->Get<double>("signal_reference"); }
   if(_sdf->HasElement("normalize_per_beam")) { normalize_per_beam_ = _sdf->Get<bool>("normalize_per_beam"); }
+  // FindElement rather than GetElement: _sdf is a const Element here and
+  // GetElement is non-const (it inserts a default child when the element is
+  // missing, which is also not what reading config should do).
+  for(sdf::ElementConstPtr alias = _sdf->FindElement("material_alias");
+      alias;
+      alias = alias->GetNextElement("material_alias"))
+  {
+    if(!alias->HasElement("match") || !alias->HasElement("model"))
+    {
+      continue;
+    }
+    material_aliases_.emplace_back(
+      alias->Get<std::string>("match"), alias->Get<std::string>("model"));
+  }
   if(_sdf->HasElement("seed"))
   {
     seed_ = _sdf->Get<int>("seed");
