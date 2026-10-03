@@ -400,6 +400,7 @@ void RadaraysOptixSensorSystem::DeclareReconfigurableParams()
   node_->declare_parameter("signal_max", signal_max_);
   node_->declare_parameter("signal_reference", signal_reference_);
   node_->declare_parameter("normalize_per_beam", normalize_per_beam_);
+  node_->declare_parameter("seed", seed_);
 
   declare_ranged_int("signal_denoising", signal_denoising_, 0, 3);
   declare_ranged_int("signal_denoising_width", signal_denoising_width_, 1, 500);
@@ -482,6 +483,11 @@ rcl_interfaces::msg::SetParametersResult RadaraysOptixSensorSystem::OnSetParamet
     else if(name == "signal_max") { signal_max_ = param.as_double(); }
     else if(name == "signal_reference") { signal_reference_ = param.as_double(); }
     else if(name == "normalize_per_beam") { normalize_per_beam_ = param.as_bool(); }
+    else if(name == "seed")
+    {
+      seed_ = static_cast<int>(param.as_int());
+      if(seed_ >= 0) { rng_.seed(static_cast<std::mt19937::result_type>(seed_)); }
+    }
     else if(name == "signal_denoising") { signal_denoising_ = static_cast<int>(param.as_int()); }
     else if(name == "signal_denoising_width") { signal_denoising_width_ = static_cast<int>(param.as_int()); }
     else if(name == "signal_denoising_mode_frac") { signal_denoising_mode_frac_ = param.as_double(); }
@@ -551,6 +557,11 @@ void RadaraysOptixSensorSystem::LoadParams(const std::shared_ptr<const sdf::Elem
   if(_sdf->HasElement("signal_max")) { signal_max_ = _sdf->Get<double>("signal_max"); }
   if(_sdf->HasElement("signal_reference")) { signal_reference_ = _sdf->Get<double>("signal_reference"); }
   if(_sdf->HasElement("normalize_per_beam")) { normalize_per_beam_ = _sdf->Get<bool>("normalize_per_beam"); }
+  if(_sdf->HasElement("seed"))
+  {
+    seed_ = _sdf->Get<int>("seed");
+    if(seed_ >= 0) { rng_.seed(static_cast<std::mt19937::result_type>(seed_)); }
+  }
 
   if(_sdf->HasElement("signal_denoising")) { signal_denoising_ = _sdf->Get<int>("signal_denoising"); }
   if(_sdf->HasElement("signal_denoising_width")) { signal_denoising_width_ = _sdf->Get<int>("signal_denoising_width"); }

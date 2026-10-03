@@ -186,6 +186,15 @@ private:
   bool frame_resolved_logged_{false};
 
   std::vector<radarays_ros::DirectedWave> beam_samples_local_;
+  // Negative means nondeterministic, which is the historical behaviour and
+  // stays the default. A non-negative seed makes a run reproducible, which
+  // measurement needs: ambient_noise_ defaults to 2 (Perlin) and draws a
+  // fresh random offset per bearing per frame, so with a target sitting
+  // near the detection threshold the noise flips individual bearings on and
+  // off and two runs of the same scenario disagree. The three native
+  // gpu_lidar sensors are deterministic, so radarays was the only sensor
+  // that could not be measured repeatably.
+  int seed_{-1};
   std::mt19937 rng_{std::random_device{}()};
 
   rclcpp::Node::SharedPtr node_;
